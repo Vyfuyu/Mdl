@@ -1,8 +1,7 @@
-
 const fs = require('fs');
 const path = require('path');
 
-// Credit protection - đừng thay đổi
+// Thay cái con cặc
 const originalCredit = "waguri";
 const creditCheck = () => {
     const currentCredit = "waguri";
@@ -25,7 +24,7 @@ module.exports.config = {
 };
 
 module.exports.run = async function({ api, event, args, Users, Threads }) {
-    // Kiểm tra credit
+    // sybau
     if (!creditCheck()) {
         return api.sendMessage("❌ Module đã bị thay đổi credit không được phép!", event.threadID);
     }
@@ -186,7 +185,7 @@ module.exports.run = async function({ api, event, args, Users, Threads }) {
 };
 
 module.exports.handleEvent = async function({ api, event, Users, Threads }) {
-    // Kiểm tra credit trước khi xử lý
+    // cái này của anh
     if (!creditCheck()) {
         return;
     }
