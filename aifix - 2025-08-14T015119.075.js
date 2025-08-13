@@ -3,7 +3,7 @@ module.exports.config = {
   name: "aifix",
   version: "1.0.0",
   hasPermssion: 3,
-  credits: "Kaori Waguri - AI Auto-Fix System Premium",
+  credits: "Kaori Waguri",
   description: "Hệ thống AI tự động phát hiện và sửa lỗi toàn bộ bot",
   commandCategory: "System",
   usages: "aifix [enable/disable/status/scan/logs]",
