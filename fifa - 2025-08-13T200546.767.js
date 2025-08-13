@@ -27,7 +27,7 @@ module.exports.config = {
     }
 };
 
-const DEEPSEEK_API = "sk-eb7832d105d949bf8821a49614ea6004";
+const DEEPSEEK_API = "Nhập api ở đây";
 
 // Tạo cầu thủ bằng AI
 async function createPlayerWithAI(rarity = "common") {
