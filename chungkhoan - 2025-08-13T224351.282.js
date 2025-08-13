@@ -8,7 +8,7 @@ module.exports.config = {
     name: "chungkhoan",
     version: "1.0.0", 
     hasPermssion: 0,
-    credits: "DeepSeek AI Stock System",
+    credits: "Kaori Waguri",
     description: "Hệ thống chứng khoán ảo với AI DeepSeek",
     commandCategory: "Tài chính",
     usages: "[mua/ban/xem/top/thitruong/lichsu]",
@@ -20,7 +20,7 @@ module.exports.config = {
 };
 
 // DeepSeek API configuration
-const DEEPSEEK_API_KEY = "sk-eb7832d105d949bf8821a49614ea6004";
+const DEEPSEEK_API_KEY = "nhập api deepseek vào đây";
 const DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions";
 
 // Khởi tạo dữ liệu thị trường
