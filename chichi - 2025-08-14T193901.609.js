@@ -2,7 +2,7 @@ module.exports.config = {
     name: "chichi",
     version: "3.0.0",
     hasPermssion: 0,
-    credits: "Enhanced Bot System",
+    credits: "Kaori Waguri",
     description: "AI Chat với DeepSeek + Quản lý File + Quản lý Nhóm + Khởi động lại Bot",
     commandCategory: "Hệ Thống",
     usages: "[tin nhắn] | restart | delete [file] | open [bài hát] | tag [tên] [số lần]",
