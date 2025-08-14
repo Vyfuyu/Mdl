@@ -21,7 +21,7 @@ const { resolve } = require("path");
 
 // DeepSeek API Ở Đay Bọn Ngu
 const DEEPSEEK_API = "https://api.deepseek.com/v1/chat/completions";
-const DEEPSEEK_API_KEY = "Đưa api deepseek của bọn mày ở đây"; // Nhớ thêm vào bọn ngu
+const DEEPSEEK_API_KEY = "sk-e4891c5b643e4a50b4d521398143a455"; // Nhớ thêm vào bọn ngu
 
 module.exports.onLoad = function () {
   const configPath = global.client.configPath;
