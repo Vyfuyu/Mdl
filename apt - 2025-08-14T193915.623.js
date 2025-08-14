@@ -3,7 +3,7 @@ module.exports.config = {
     name: "quanly",
     version: "2.0.0",
     hasPermssion: 2,
-    credits: "Enhanced System",
+    credits: "Kaori Waguri",
     description: "Quản lý hệ thống bot dễ dàng",
     commandCategory: "Hệ Thống",
     usages: "restart | files | clean | update | status",
