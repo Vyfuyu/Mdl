@@ -3,7 +3,7 @@ module.exports.config = {
   name: "aichat",
   version: "2.0.0",
   hasPermssion: 0,
-  credits: "Kaori Waguri - AI Chat System Premium",
+  credits: "Kaori Waguri",
   description: "Hệ thống AI chat thông minh với DeepSeek - Quản lý bot toàn diện",
   commandCategory: "AI System",
   usages: "aichat [on/off/setup/personality/prefix]",
