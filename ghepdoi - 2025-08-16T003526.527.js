@@ -3,7 +3,7 @@ module.exports.config = {
     name: "ghepdoi",
     version: "1.0.0",
     hasPermssion: 0,
-    credits: "Assistant",
+    credits: "Kaori Waguri",
     description: "Ghép đôi ngẫu nhiên với thành viên từ các nhóm khác",
     commandCategory: "giải trí",
     usages: "ghepdoi",
