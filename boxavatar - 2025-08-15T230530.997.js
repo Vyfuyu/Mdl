@@ -28,30 +28,44 @@ module.exports.run = async ({ event, api, args }) => {
         return new Promise(resolve => setTimeout(resolve, ms)); 
     }
 
+    // Hàm làm sạch text, loại bỏ ký tự đặc biệt
+    function cleanText(text) {
+        if (!text) return "Unknown";
+        return text
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Loại bỏ dấu
+            .replace(/[^\w\s]/g, '') // Loại bỏ ký tự đặc biệt
+            .replace(/\s+/g, ' ') // Loại bỏ space thừa
+            .trim();
+    }
+
     // Lấy thông tin nhóm
     try {
         const threadInfo = await api.getThreadInfo(threadID);
         const { participantIDs, adminIDs, name: groupName, userInfo } = threadInfo;
         
-        // Lọc user còn hoạt động
-        const activeUsers = userInfo.filter(user => user.gender !== undefined);
+        // Lấy tất cả thành viên, không lọc
+        const allUsers = userInfo || [];
         const adminList = adminIDs.map(admin => admin.id);
         
         // Phân loại admin và member
-        const admins = activeUsers.filter(user => adminList.includes(user.id));
-        const members = activeUsers.filter(user => !adminList.includes(user.id));
+        const admins = allUsers.filter(user => adminList.includes(user.id));
+        const members = allUsers.filter(user => !adminList.includes(user.id));
         
-        api.sendMessage(`🎨 Đang tạo ảnh box với ${activeUsers.length} thành viên (${admins.length} admin, ${members.length} member)...`, threadID, messageID);
+        const totalUsers = allUsers.length;
+        
+        api.sendMessage(`Dang tao anh box voi ${totalUsers} thanh vien (${admins.length} admin, ${members.length} member)...`, threadID, messageID);
         
         // Thiết lập kích thước
         const avatarSize = parseInt(args[0]) || 150;
-        const title = args.slice(1).join(" ") || groupName || "Box Chat";
+        const customTitle = args.slice(1).join(" ");
+        const title = customTitle ? cleanText(customTitle) : cleanText(groupName) || "Box Chat";
         
         // Tính toán layout
         const padding = 20;
         const nameHeight = 30;
         const sectionGap = 40;
-        const headerHeight = 100;
+        const headerHeight = 120;
         
         const itemsPerRow = Math.floor(1200 / (avatarSize + padding));
         const adminRows = Math.ceil(admins.length / itemsPerRow);
@@ -59,8 +73,8 @@ module.exports.run = async ({ event, api, args }) => {
         
         const canvasWidth = Math.max(1200, (avatarSize + padding) * Math.min(itemsPerRow, Math.max(admins.length, members.length)));
         const canvasHeight = headerHeight + 
-                           (adminRows > 0 ? 60 + adminRows * (avatarSize + nameHeight + padding) + sectionGap : 0) +
-                           (memberRows > 0 ? 60 + memberRows * (avatarSize + nameHeight + padding) : 0) + 
+                           (adminRows > 0 ? 80 + adminRows * (avatarSize + nameHeight + padding) + sectionGap : 0) +
+                           (memberRows > 0 ? 80 + memberRows * (avatarSize + nameHeight + padding) : 0) + 
                            100;
         
         // Tạo canvas
@@ -80,7 +94,7 @@ module.exports.run = async ({ event, api, args }) => {
                 const fontResponse = await axios.get('https://github.com/google/fonts/raw/main/ofl/play/Play-Bold.ttf', { responseType: 'arraybuffer' });
                 fs.writeFileSync(__dirname + `/cache/Play-Bold.ttf`, Buffer.from(fontResponse.data));
             } catch (e) {
-                console.log("Không thể tải font, sử dụng font mặc định");
+                console.log("Khong the tai font, su dung font mac dinh");
             }
         }
         
@@ -88,16 +102,20 @@ module.exports.run = async ({ event, api, args }) => {
         try {
             Canvas.registerFont(__dirname + `/cache/Play-Bold.ttf`, { family: "PlayBold" });
         } catch (e) {
-            console.log("Sử dụng font mặc định");
+            console.log("Su dung font mac dinh");
         }
         
-        // Header title
-        ctx.font = 'bold 48px PlayBold, Arial';
+        // Header - Tên nhóm
+        ctx.font = 'bold 42px PlayBold, Arial';
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.shadowColor = 'rgba(0,0,0,0.5)';
         ctx.shadowBlur = 10;
-        ctx.fillText(title, canvasWidth / 2, 60);
+        ctx.fillText(title, canvasWidth / 2, 50);
+        
+        // Thông tin nhóm
+        ctx.font = 'bold 24px PlayBold, Arial';
+        ctx.fillText(`Tong ${totalUsers} thanh vien`, canvasWidth / 2, 85);
         ctx.shadowBlur = 0;
         
         let currentY = headerHeight;
@@ -115,11 +133,11 @@ module.exports.run = async ({ event, api, args }) => {
             if (users.length === 0) return currentY;
             
             // Section title
-            ctx.font = 'bold 32px PlayBold, Arial';
+            ctx.font = 'bold 28px PlayBold, Arial';
             ctx.fillStyle = titleColor;
             ctx.textAlign = 'left';
             ctx.fillText(sectionTitle, 50, currentY + 40);
-            currentY += 60;
+            currentY += 80;
             
             let x = padding;
             let y = currentY;
@@ -130,7 +148,7 @@ module.exports.run = async ({ event, api, args }) => {
                     // Download avatar
                     const avatarResponse = await axios.get(
                         `https://graph.facebook.com/${user.id}/picture?height=300&width=300&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`,
-                        { responseType: 'arraybuffer', timeout: 10000 }
+                        { responseType: 'arraybuffer', timeout: 15000 }
                     );
                     
                     const circleAvatar = await createCircleAvatar(avatarResponse.data);
@@ -152,11 +170,11 @@ module.exports.run = async ({ event, api, args }) => {
                         ctx.stroke();
                     }
                     
-                    // Vẽ tên
-                    const userName = user.name || "Unknown";
+                    // Vẽ tên - làm sạch text
+                    const userName = cleanText(user.name || "Unknown");
                     const displayName = userName.length > 15 ? userName.substring(0, 15) + "..." : userName;
                     
-                    ctx.font = 'bold 16px PlayBold, Arial';
+                    ctx.font = 'bold 14px PlayBold, Arial';
                     ctx.fillStyle = '#ffffff';
                     ctx.textAlign = 'center';
                     ctx.shadowColor = 'rgba(0,0,0,0.7)';
@@ -173,10 +191,10 @@ module.exports.run = async ({ event, api, args }) => {
                         y += avatarSize + nameHeight + padding;
                     }
                     
-                    await delay(100); // Delay để tránh spam request
+                    await delay(150); // Delay để tránh spam request
                     
                 } catch (e) {
-                    console.log(`Lỗi tải avatar ${user.id}:`, e.message);
+                    console.log(`Loi tai avatar ${user.id}:`, e.message);
                     
                     // Vẽ placeholder
                     ctx.fillStyle = '#cccccc';
@@ -184,15 +202,15 @@ module.exports.run = async ({ event, api, args }) => {
                     ctx.arc(x + avatarSize/2, y + avatarSize/2, avatarSize/2, 0, Math.PI * 2);
                     ctx.fill();
                     
-                    ctx.font = 'bold 24px Arial';
+                    ctx.font = 'bold 20px Arial';
                     ctx.fillStyle = '#666666';
                     ctx.textAlign = 'center';
-                    ctx.fillText('👤', x + avatarSize/2, y + avatarSize/2 + 8);
+                    ctx.fillText('User', x + avatarSize/2, y + avatarSize/2 + 5);
                     
                     // Tên
-                    const userName = user.name || "Unknown";
+                    const userName = cleanText(user.name || "Unknown");
                     const displayName = userName.length > 15 ? userName.substring(0, 15) + "..." : userName;
-                    ctx.font = 'bold 16px Arial';
+                    ctx.font = 'bold 14px Arial';
                     ctx.fillStyle = '#ffffff';
                     ctx.fillText(displayName, x + avatarSize/2, y + avatarSize + 20);
                     
@@ -211,19 +229,19 @@ module.exports.run = async ({ event, api, args }) => {
         
         // Vẽ admin section
         if (admins.length > 0) {
-            currentY = await drawSection(admins, `👑 QUẢN TRỊ VIÊN (${admins.length})`, '#ffd700');
+            currentY = await drawSection(admins, `QUAN TRI VIEN (${admins.length})`, '#ffd700');
         }
         
         // Vẽ member section  
         if (members.length > 0) {
-            currentY = await drawSection(members, `👥 THÀNH VIÊN (${members.length})`, '#ffffff');
+            currentY = await drawSection(members, `THANH VIEN (${members.length})`, '#ffffff');
         }
         
         // Footer info
-        ctx.font = 'bold 20px PlayBold, Arial';
+        ctx.font = 'bold 18px PlayBold, Arial';
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
-        ctx.fillText(`Tổng cộng: ${activeUsers.length} thành viên`, canvasWidth / 2, canvasHeight - 30);
+        ctx.fillText(`Box: ${cleanText(groupName)} - ${totalUsers} thanh vien`, canvasWidth / 2, canvasHeight - 30);
         
         // Lưu và gửi ảnh
         const imagePath = __dirname + `/cache/boxavatar_${Date.now()}.png`;
@@ -231,18 +249,18 @@ module.exports.run = async ({ event, api, args }) => {
         fs.writeFileSync(imagePath, buffer);
         
         return api.sendMessage({
-            body: `✅ Đã tạo xong ảnh box!\n👑 Admin: ${admins.length}\n👥 Member: ${members.length}\n📊 Tổng: ${activeUsers.length} thành viên`,
+            body: `Da tao xong anh box!\nAdmin: ${admins.length}\nMember: ${members.length}\nTong: ${totalUsers} thanh vien`,
             attachment: fs.createReadStream(imagePath)
         }, threadID, (error, info) => {
             if (error) {
-                console.log('Lỗi gửi ảnh:', error);
-                api.sendMessage(`❌ Lỗi gửi ảnh: ${error.message}`, threadID, messageID);
+                console.log('Loi gui anh:', error);
+                api.sendMessage(`Loi gui anh: ${error.message}`, threadID, messageID);
             }
             fs.unlinkSync(imagePath);
         }, messageID);
         
     } catch (error) {
-        console.log('Lỗi tạo ảnh box:', error);
-        return api.sendMessage(`❌ Lỗi: ${error.message}`, threadID, messageID);
+        console.log('Loi tao anh box:', error);
+        return api.sendMessage(`Loi: ${error.message}`, threadID, messageID);
     }
 };
