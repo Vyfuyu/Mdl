@@ -3,7 +3,7 @@ module.exports.config = {
     name: "boxavatar",
     version: "1.0.0",
     hasPermssion: 0,
-    credits: "Assistant",
+    credits: "Kaori Waguri",
     description: "Tạo ảnh tổng hợp avatar tất cả thành viên trong box",
     commandCategory: "tạo ảnh",
     usages: "boxavatar [size] [title]",
