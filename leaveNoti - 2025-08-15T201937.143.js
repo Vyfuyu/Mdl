@@ -2,7 +2,7 @@
 module.exports.config = {
 	name: "leaveNoti",
 	eventType: ["log:unsubscribe"],
-	version: "1.0.0",
+	version: "1.0.1",
 	credits: "Kaori Waguri",
 	description: "Thông báo bot hoặc người rời khỏi nhóm với Canvas",
 	dependencies: {
@@ -13,6 +13,7 @@ module.exports.config = {
 };
 
 module.exports.run = async function({ api, event, Users, Threads }) {
+	// Nếu bot bị kick/rời thì không làm gì
 	if (event.logMessageData.leftParticipantFbId == api.getCurrentUserID()) return;
 	
 	const { createReadStream, existsSync, mkdirSync, writeFileSync } = global.nodemodule["fs-extra"];
@@ -22,8 +23,15 @@ module.exports.run = async function({ api, event, Users, Threads }) {
 	const { threadID } = event;
 	
 	try {
-		const data = global.data.threadData.get(parseInt(threadID)) || (await Threads.getData(threadID)).data;
-		const name = global.data.userName.get(event.logMessageData.leftParticipantFbId) || await Users.getNameUser(event.logMessageData.leftParticipantFbId);
+		const data = global.data.threadData.get(parseInt(threadID)) || {};
+		let name = "Thành viên";
+		try {
+			name = global.data.userName.get(event.logMessageData.leftParticipantFbId) || 
+				   await Users.getNameUser(event.logMessageData.leftParticipantFbId);
+		} catch (e) {
+			console.log("[LEAVE NOTI] Lỗi lấy tên user:", e.message);
+		}
+		
 		const type = (event.author == event.logMessageData.leftParticipantFbId) ? "tự rời" : "bị kick";
 		const uid = event.logMessageData.leftParticipantFbId;
 		
@@ -72,7 +80,13 @@ module.exports.run = async function({ api, event, Users, Threads }) {
 
 		// Avatar cho user rời
 		try {
-			const avatarResponse = await axios.get(`https://graph.facebook.com/${uid}/picture?height=150&width=150&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`, { responseType: 'arraybuffer' });
+			const avatarResponse = await axios.get(
+				`https://graph.facebook.com/${uid}/picture?height=150&width=150&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`, 
+				{ 
+					responseType: 'arraybuffer',
+					timeout: 10000
+				}
+			);
 			const avatarBuffer = Buffer.from(avatarResponse.data, 'binary');
 			const avatar = await Canvas.loadImage(avatarBuffer);
 			
@@ -94,6 +108,7 @@ module.exports.run = async function({ api, event, Users, Threads }) {
 			ctx.strokeStyle = '#ff6b6b';
 			ctx.stroke();
 		} catch (e) {
+			console.log("[LEAVE NOTI] Lỗi load avatar:", e.message);
 			// Default avatar if failed
 			ctx.fillStyle = '#ff6b6b';
 			ctx.beginPath();
@@ -110,12 +125,14 @@ module.exports.run = async function({ api, event, Users, Threads }) {
 		ctx.font = 'bold 32px Arial';
 		ctx.fillStyle = '#333333';
 		ctx.textAlign = 'center';
-		ctx.fillText(name, canvas.width / 2, 400);
+		const displayName = name.length > 20 ? name.substring(0, 20) + '...' : name;
+		ctx.fillText(displayName, canvas.width / 2, 400);
 
 		// Leave type and group info
 		ctx.font = '20px Arial';
 		ctx.fillStyle = '#666666';
-		ctx.fillText(`đã ${type} khỏi ${threadName}`, canvas.width / 2, 430);
+		const groupName = threadName && threadName.length > 25 ? threadName.substring(0, 25) + '...' : threadName || 'Nhóm chat';
+		ctx.fillText(`đã ${type} khỏi ${groupName}`, canvas.width / 2, 430);
 		ctx.fillText(`Còn lại ${participantIDs.length} thành viên`, canvas.width / 2, 450);
 
 		let msg;
@@ -128,7 +145,7 @@ module.exports.run = async function({ api, event, Users, Threads }) {
 		msg = msg.replace(/\{name}/g, name).replace(/\{type}/g, type).replace(/\{uid}/g, uid);
 
 		// Save canvas
-		const imagePath = join(leavePath, `goodbye_${Date.now()}.png`);
+		const imagePath = join(leavePath, `goodbye_${threadID}_${Date.now()}.png`);
 		const buffer = canvas.toBuffer('image/png');
 		writeFileSync(imagePath, buffer);
 
@@ -141,14 +158,21 @@ module.exports.run = async function({ api, event, Users, Threads }) {
 			// Cleanup
 			try {
 				require('fs').unlinkSync(imagePath);
-			} catch (e) {}
+			} catch (e) {
+				console.log("[LEAVE NOTI] Lỗi cleanup:", e.message);
+			}
 		});
 
 	} catch (e) {
 		console.log("[LEAVE NOTI ERROR]", e);
-		// Fallback message
-		const name = global.data.userName.get(event.logMessageData.leftParticipantFbId) || "Thành viên";
-		const type = (event.author == event.logMessageData.leftParticipantFbId) ? "tự rời" : "bị kick";
-		return api.sendMessage(`😢 ${name} đã ${type} khỏi nhóm!\n💫 Credit: Kaori Waguri`, threadID);
+		// Fallback message khi có lỗi
+		try {
+			const name = global.data.userName.get(event.logMessageData.leftParticipantFbId) || "Thành viên";
+			const type = (event.author == event.logMessageData.leftParticipantFbId) ? "tự rời" : "bị kick";
+			return api.sendMessage(`😢 ${name} đã ${type} khỏi nhóm!\n💫 Credit: Kaori Waguri`, threadID);
+		} catch (fallbackError) {
+			console.log("[LEAVE NOTI FALLBACK ERROR]", fallbackError);
+			return api.sendMessage(`😢 Một thành viên đã rời khỏi nhóm!\n💫 Credit: Kaori Waguri`, threadID);
+		}
 	}
 };
