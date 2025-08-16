@@ -1,9 +1,8 @@
-
 module.exports.config = {
     name: "baochi",
     version: "1.0.0",
     hasPermssion: 0,
-    credits: "Assistant",
+    credits: "Kaori Waguri",
     description: "Lấy tin tức mới nhất và dịch sang tiếng Việt",
     commandCategory: "tiện ích",
     usages: "baochi [chủ đề]",
