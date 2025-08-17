@@ -20,7 +20,7 @@ module.exports.run = async ({ event, api, args, Users, Currencies }) => {
     const { threadID, senderID, messageID } = event;
 
     // API Token YeuMoney
-    const API_TOKEN = "d63b9e91011fd783412e373d5a4da740c5a64c4f587b4b113d461f58ac76d5f5";
+    const API_TOKEN = ".........";
     const API_URL = "https://yeumoney.com/QL_api.php";
 
     // Hàm làm sạch text
